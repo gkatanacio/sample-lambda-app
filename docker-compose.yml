@@ -1,0 +1,24 @@
+version: "3"
+
+services:
+  golang:
+    image: golang:1.15
+    volumes:
+      - .:/code:cached
+    working_dir: /code
+    env_file: .env
+    environment:
+      - GOPATH=/code/.go
+
+  serverless:
+    image: flemay/serverless
+    volumes:
+      - .:/app:cached
+    working_dir: /app
+    env_file: .env
+
+  mockery:
+    image: vektra/mockery:v2.5
+    volumes:
+      - .:/code:cached
+    working_dir: /code
