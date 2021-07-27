@@ -1,6 +1,4 @@
-# go-serverless-template
-
-Template for serverless golang projects.
+# sample-lambda-app
 
 Since this tries to follow the [3 Musketeers](https://3musketeers.io) methodology, the following are heavily used:
 - Docker

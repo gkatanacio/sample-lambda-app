@@ -2,7 +2,7 @@ version: "3"
 
 services:
   golang:
-    image: golang:1.15
+    image: golang:1.16
     volumes:
       - .:/code:cached
     working_dir: /code
@@ -18,7 +18,7 @@ services:
     env_file: .env
 
   mockery:
-    image: vektra/mockery:v2.5
+    image: vektra/mockery:v2.8
     volumes:
       - .:/code:cached
     working_dir: /code

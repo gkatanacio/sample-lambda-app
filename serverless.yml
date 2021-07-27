@@ -1,4 +1,4 @@
-service: go-serverless-template
+service: sample-lambda-app
 
 package:
   individually: true
@@ -10,19 +10,68 @@ provider:
   runtime: go1.x
   deploymentBucket:
     name: ${env:AWS_DEPLOYMENT_BUCKET}
-  stage: ${env:STAGE}
   region: ${env:AWS_REGION}
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "sqs:SendMessage"
+      Resource: { Fn::GetAtt: [ "ProcessMovieQueue", "Arn" ] }
+  environment:
+    SOME_SHARED_ENV_VAR: ${env:SOME_SHARED_ENV_VAR}
 
 functions:
-  hello:
-    handler: bin/hello
+  createMovie:
+    handler: bin/create-movie
     package:
       include:
-        - ./bin/hello
+        - ./bin/create-movie
     timeout: 30
     memorySize: 128
     events:
-      - schedule:
-          rate: ${env:RUN_FREQUENCY}
+      - http:
+          path: movies
+          method: post
+          cors: true
     environment:
-      HELLO_WHO: ${env:HELLO_WHO}
+      PROCESS_MOVIE_QUEUE_URL: { Ref: ProcessMovieQueue }
+      SOME_FXN_ENV_VAR: ${env:SOME_FXN_ENV_VAR}
+
+  getMovie:
+    handler: bin/get-movie
+    package:
+      include:
+        - ./bin/get-movie
+    timeout: 30
+    memorySize: 128
+    events:
+      - http:
+          path: movies/{id}
+          method: get
+          cors: true
+
+  processMovie:
+    handler: bin/process-movie
+    package:
+      include:
+        - ./bin/process-movie
+    timeout: 15
+    memorySize: 128
+    events:
+      - sqs:
+          arn: { Fn::GetAtt: [ "ProcessMovieQueue", "Arn" ] }
+          batchSize: 1
+
+resources:
+  Resources:
+    ProcessMovieQueueDLQ:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-ProcessMovieQueue-DLQ
+        MessageRetentionPeriod: 1209600
+    ProcessMovieQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-ProcessMovieQueue
+        RedrivePolicy:
+          deadLetterTargetArn: { Fn::GetAtt: [ "ProcessMovieQueueDLQ", "Arn" ] }
+          maxReceiveCount: 5
